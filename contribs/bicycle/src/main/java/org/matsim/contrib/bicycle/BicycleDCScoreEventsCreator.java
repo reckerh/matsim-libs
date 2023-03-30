@@ -157,14 +157,14 @@ import java.util.*;
 		 }
 
 		 //Scoring of road type
-		 double roadTypeScore = (wtpSideRoad_min - getRoadTypeWTP(type, wtpSideRoad_min)) * traveledTime;
+		 double roadTypeScore = -(wtpSideRoad_min - getRoadTypeWTP(type, wtpSideRoad_min)) * traveledTime;
 
 		 //scoring of bike infrastructure
-		 double infrastructureScore = (wtpProtectedBikeLane_min - getInfrastructureWTP(cyclewaytype, type, wtpBikeLane_min, wtpBikePath_min,
+		 double infrastructureScore = -(wtpProtectedBikeLane_min - getInfrastructureWTP(cyclewaytype, type, wtpBikeLane_min, wtpBikePath_min,
 				 wtpProtectedBikeLane_min))*traveledTime;
 
 		 //scoring of surface
-		 double surfaceScore = (wtpAsphalt_min - getSurfaceWTP(surface, type, wtpCobbled_min, wtpAsphalt_min)) * traveledTime;
+		 double surfaceScore = -(wtpAsphalt_min - getSurfaceWTP(surface, type, wtpCobbled_min, wtpAsphalt_min)) * traveledTime;
 
 		 //sum up and adjust the link-based score
 		 double amount = (userDefinedNetworkAttributeScore + roadTypeScore + infrastructureScore + surfaceScore)*
