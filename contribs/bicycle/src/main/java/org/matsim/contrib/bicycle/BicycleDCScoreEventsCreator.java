@@ -137,17 +137,18 @@ import java.util.*;
 											double wtpBikeLane_min, double wtpBikePath_min, double wtpProtectedBikeLane_min,
 											double wtpCobbled_min, double wtpAsphalt_min,
 											double marginalUtilityOfUserDefinedNetworkAttribute_m,
-											String nameOfUserDefinedNetworkAttribute, double userDefinedNetworkAttributeDefaultValue){ //TODO finish
+											String nameOfUserDefinedNetworkAttribute, double userDefinedNetworkAttributeDefaultValue){
 
 		 //get link attributes
 		 String surface = (String) link.getAttributes().getAttribute(BicycleUtils.SURFACE);
 		 String type = (String) link.getAttributes().getAttribute(BicycleUtils.WAY_TYPE);
 		 String cyclewaytype = (String) link.getAttributes().getAttribute(BicycleUtils.CYCLEWAY);
+		 //I don't think any of this is checked for presence of multiple attr (separated by ";") -> treated in WTP getters
 		 double distance = link.getLength();
 
 		 double traveledTime = (eventTime-lastLinkEnterTime)/60.; //TODO: look up unit of time (seconds, ...?) and adjust accordingly
 
-		 //scoring of user-defined attributes (TODO: positive/negative + size of effect?)
+		 //scoring of user-defined attributes
 		 String userDefinedNetworkAttributeString;
 		 double userDefinedNetworkAttributeScore = 0.;
 		 if (nameOfUserDefinedNetworkAttribute != null) {
@@ -217,6 +218,33 @@ import java.util.*;
 
 		 double infrastructureWTP = 0.;
 
+
+
+		 //assumption: cyclewaytype = key:cycleway; sadly, this does not cover all types of cycleways in OSM
+		 //for (some) options in OSM see https://wiki.openstreetmap.org/wiki/Key:cycleway
+		 //furthermore, no key:cycleway values exist for protected bike lanes; instead, they and bike paths are mapped as cycleway=track
+		 //(or as cycleway = buffered_lane, but only by mistake and it could still refer to bike paths)
+		 //shared busways (more common in DE) and shared car lanes (usually not explicitly marked in DE) not considered
+		 //options were adjusted based on infrastructure found present in Stuttgart
+		 if (cyclewaytype != null){
+			switch(cyclewaytype){
+				case "lane":
+				case "yes":
+				case "right":
+				case "opposite":
+				case "left":
+				case "lane;opposite_lane":
+				case "both":
+				case "opposite_lane": infrastructureWTP = wtpBikeLane_min; break;
+				case "track":
+				case "track;opposite_track":
+				case "track;opposite_lane":
+				case "cyclestreet":
+				case "opposite_track": infrastructureWTP = wtpProtectedBikeLane_min; break;
+				default: infrastructureWTP = 0.; break;
+			}
+		 }
+
 		 //road types that provide similar conditions to bike guidance separated from traffic are given the highest wtp
 		 //assumption: type = key:highway
 		 if (type != null){
@@ -227,24 +255,6 @@ import java.util.*;
 				 case "cycleway": infrastructureWTP = wtpProtectedBikeLane_min; break; //lower-function network -> side road
 				 default: infrastructureWTP = 0.; break;
 			 }
-		 }
-
-		 //assumption: cyclewaytype = key:cycleway; sadly, this does not cover all types of cycleways in OSM
-		 //for (some) options in OSM see https://wiki.openstreetmap.org/wiki/Key:cycleway
-		 //-> TODO: get overview of cycleway types in network and readjust the following part; maybe set everything that where cycleway!=no, null, ... as lane? (including sharrows etc.)
-		 //furthermore, no key:cycleway values exist for protected bike lanes; instead, they and bike paths are mapped as cycleway=track
-		 //(or as cycleway = buffered_lane, but only by mistake and it could still refer to bike paths)
-		 //-> TODO: give pbl wtp to more than just protected bike lanes or see that value as part of futuristic possibility in SP-experiment?
-		 //shared busways (more common in DE) and shared car lanes (usually not explicitly marked in DE) not considered,
-		 //bicycle streets also not considered (but also not considered in SP experiments)
-		 if (cyclewaytype != null){
-			switch(cyclewaytype){
-				case "lane":
-				case "opposite_lane": infrastructureWTP = wtpBikeLane_min; break;
-				case "track":
-				case "opposite_track": infrastructureWTP = wtpProtectedBikeLane_min; break;
-				default: infrastructureWTP = 0.; break;
-			}
 		 }
 
 		 return infrastructureWTP;
@@ -258,11 +268,14 @@ import java.util.*;
 		 if (surface != null) {
 			 switch (surface) {
 				 //for explanations of surface values see https://wiki.openstreetmap.org/wiki/Key:surface
+				 case "excellent":
 				 case "paved":
+				 case "asphalt;paved":
 				 case "asphalt": surfaceWTP = wtpAsphalt_min; break; //asphalt & paved both are assigned the asphalt WTP; paved assumed to be very even surface
 				 case "cobblestone": surfaceWTP = wtpCobbled_min; break;
 				 case "cobblestone (bad)": surfaceWTP = wtpCobbled_min; break;
 				 case "sett": surfaceWTP = wtpCobbled_min; break;
+				 case "grass_paver":
 				 case "cobblestone;flattened":
 				 case "cobblestone:flattened": surfaceWTP = wtpCobbled_min; break;
 				 case "concrete": surfaceWTP = wtpAsphalt_min; break;
@@ -274,6 +287,8 @@ import java.util.*;
 				 case "paving_stones:30": surfaceWTP = wtpAsphalt_min; break;
 				 case "unpaved": surfaceWTP = 0.; break; //unpaved and subvalues are assigned WTP 0 (-> reference class)
 				 case "compacted": surfaceWTP = 0.; break; //TODO: hier ggf. asphalt zuweisen, da eig. sehr gut befahrbar?
+				 case "unhewn_cobblestone":
+				 case "artificial_turf":
 				 case "dirt":
 				 case "earth": surfaceWTP = 0.; break;
 				 case "fine_gravel": surfaceWTP = 0.; break; //TODO: hier ggf. asphalt zuweisen, da eig. sehr gut befahrbar?
@@ -288,13 +303,15 @@ import java.util.*;
 				 case "compressed": surfaceWTP = 0.; break; //TODO: compressed ggf. besser bewertet als stone und grass?
 				 case "asphalt;paving_stones:35": surfaceWTP = wtpAsphalt_min; break;
 				 case "paving_stones:3": surfaceWTP = wtpAsphalt_min; break;
-				 default: surfaceWTP = 0.; break; //TODO: change to higher value? -> make that depend on model results
+				 default: surfaceWTP = 0.; break;
 			 }
 		 } else {
 			 // For many primary and secondary roads, no surface is specified because they are by default assumed to be is asphalt.
 			 // For tertiary roads street this is not true, e.g. Friesenstr. in Kreuzberg
 			 if (type != null) {
-				 if (type.equals("primary") || type.equals("primary_link") || type.equals("secondary") || type.equals("secondary_link")) {
+				 if (type.equals("primary") || type.equals("primary_link") || type.equals("secondary") || type.equals("secondary_link") ||
+				 type.equals("tertiary") || type.equals("tertiary_link") || type.equals("residential")
+				 ) {
 					 surfaceWTP = wtpAsphalt_min;
 				 }
 			 }
