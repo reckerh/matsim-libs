@@ -125,7 +125,7 @@ import java.util.*;
 						 userDefinedNetworkAttributeDefaultValue);
 				 final Id<Person> driverOfVehicle = vehicle2driver.getDriverOfVehicle( event.getVehicleId() );
 				 Gbl.assertNotNull( driverOfVehicle );
-				 this.eventsManager.processEvent( new PersonScoreEvent( event.getTime(), driverOfVehicle, amount, "bicycleAdditionalLinkScore" ) );
+				 this.eventsManager.processEvent( new PersonScoreEvent( event.getTime(), driverOfVehicle, amount, "bicycleAdditionalDCLinkScore" ) );
 			 }
 		 }
 	 }
