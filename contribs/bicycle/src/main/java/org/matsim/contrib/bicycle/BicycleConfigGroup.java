@@ -33,12 +33,20 @@ public final class BicycleConfigGroup extends ReflectiveConfigGroup {
 	private static final String INPUT_COMFORT = "marginalUtilityOfComfort_m";
 	private static final String INPUT_INFRASTRUCTURE = "marginalUtilityOfInfrastructure_m";
 	private static final String INPUT_GRADIENT = "marginalUtilityOfGradient_m_100m";
+	private static final String INPUT_DCSIDEROAD = "wtpSideRoad_min";
+	private static final String INPUT_DCBIKELANE = "wtpBikeLane_min";
+	private static final String INPUT_DCBIKEPATH = "wtpBikePath_min";
+	private static final String INPUT_DCPBIKELANE = "wtpProtectedBikeLane_min";
+	private static final String INPUT_DCCOBBLED = "wtpCobbled_min";
+	private static final String INPUT_DCASPHALT = "wtpAsphalt_min";
+	private static final String INPUT_DCFACTOR = "wtpAdjustmentFactor";
 	private static final String USER_DEFINED_NETWORK_ATTRIBUTE_MARGINAL_UTILITY = "marginalUtilityOfUserDefinedNetworkAttribute_m";
 	private static final String USER_DEFINED_NETWORK_ATTRIBUTE_NAME = "userDefinedNetworkAttributeName";
 	private static final String USER_DEFINED_NETWORK_ATTRIBUTE_DEFAULT_VALUE = "userDefinedNetworkAttributeDefaultValue";
 	private static final String MAX_BICYCLE_SPEED_FOR_ROUTING = "maxBicycleSpeedForRouting";
 	private static final String BICYCLE_MODE = "bicycleMode";
 	private static final String MOTORIZED_INTERACTION = "motorizedInteraction";
+
 
 	private double marginalUtilityOfComfort;
 
@@ -49,6 +57,13 @@ public final class BicycleConfigGroup extends ReflectiveConfigGroup {
 	}
 	private double marginalUtilityOfInfrastructure;
 	private double marginalUtilityOfGradient;
+	private double wtpSideRoad_min;
+	private double wtpBikeLane_min;
+	private double wtpBikePath_min;
+	private double wtpProtectedBikeLane_min;
+	private double wtpCobbled_min;
+	private double wtpAsphalt_min;
+	private double wtpAdjustmentFactor;
 	private double marginalUtilityOfUserDefinedNetworkAttribute;
 	private String userDefinedNetworkAttributeName;
 	private double userDefinedNetworkAttributeDefaultValue;
@@ -67,6 +82,13 @@ public final class BicycleConfigGroup extends ReflectiveConfigGroup {
 		map.put(INPUT_COMFORT, "marginalUtilityOfSurfacetype");
 		map.put(INPUT_INFRASTRUCTURE, "marginalUtilityOfStreettype");
 		map.put(INPUT_GRADIENT, "marginalUtilityOfGradient");
+		map.put(INPUT_DCSIDEROAD, "wtpForSideRoad_perMinute");
+		map.put(INPUT_DCBIKELANE, "wtpForBikeLane_perMinute");
+		map.put(INPUT_DCBIKEPATH, "wtpForBikePath_perMinute");
+		map.put(INPUT_DCPBIKELANE, "wtpForProtectedBikeLane_perMinute");
+		map.put(INPUT_DCCOBBLED, "wtpForCobbledSurface_perMinute");
+		map.put(INPUT_DCASPHALT, "wtpForAsphaltSurface_perMinute");
+		map.put(INPUT_DCFACTOR, "adjustmentFactorForWTP");
 		map.put(USER_DEFINED_NETWORK_ATTRIBUTE_MARGINAL_UTILITY, "marginalUtilityOfUserDefinedNetworkAttribute");
 		map.put(USER_DEFINED_NETWORK_ATTRIBUTE_NAME, "userDefinedNetworkAttributeName");
 		map.put(USER_DEFINED_NETWORK_ATTRIBUTE_DEFAULT_VALUE, "userDefinedNetworkAttributeDefaultValue");
@@ -99,6 +121,69 @@ public final class BicycleConfigGroup extends ReflectiveConfigGroup {
 	@StringGetter( INPUT_GRADIENT )
 	public double getMarginalUtilityOfGradient_m_100m() {
 		return this.marginalUtilityOfGradient;
+	}
+	@StringSetter( INPUT_DCSIDEROAD )
+	public BicycleConfigGroup setWtpSideRoad_min( final double value ) {
+		this.wtpSideRoad_min = value;
+		return this;
+	}
+	@StringGetter( INPUT_DCSIDEROAD )
+	public double getWtpSideRoad_min() {
+		return this.wtpSideRoad_min;
+	}
+	@StringSetter( INPUT_DCBIKELANE )
+	public BicycleConfigGroup setWtpBikeLane_min( final double value ) {
+		this.wtpBikeLane_min = value;
+		return this;
+	}
+	@StringGetter( INPUT_DCBIKELANE )
+	public double getWtpBikeLane_min() {
+		return this.wtpBikeLane_min;
+	}
+	@StringSetter( INPUT_DCBIKEPATH )
+	public BicycleConfigGroup setWtpBikePath_min( final double value ) {
+		this.wtpBikePath_min = value;
+		return this;
+	}
+	@StringGetter( INPUT_DCBIKEPATH )
+	public double getWtpBikePath_min() {
+		return this.wtpBikePath_min;
+	}
+	@StringSetter( INPUT_DCPBIKELANE )
+	public BicycleConfigGroup setWtpProtectedBikeLane_min( final double value ) {
+		this.wtpProtectedBikeLane_min = value;
+		return this;
+	}
+	@StringGetter( INPUT_DCPBIKELANE )
+	public double getWtpProtectedBikeLane_min() {
+		return this.wtpProtectedBikeLane_min;
+	}
+	@StringSetter( INPUT_DCCOBBLED )
+	public BicycleConfigGroup setWtpCobbled_min( final double value ) {
+		this.wtpCobbled_min = value;
+		return this;
+	}
+	@StringGetter( INPUT_DCCOBBLED )
+	public double getWtpCobbled_min() {
+		return this.wtpCobbled_min;
+	}
+	@StringSetter( INPUT_DCASPHALT )
+	public BicycleConfigGroup setWtpAsphalt_min( final double value ) {
+		this.wtpAsphalt_min = value;
+		return this;
+	}
+	@StringGetter( INPUT_DCASPHALT )
+	public double getWtpAsphalt_min() {
+		return this.wtpAsphalt_min;
+	}
+	@StringSetter( INPUT_DCFACTOR )
+	public BicycleConfigGroup setWtpAdjustmentFactor( final double value ) {
+		this.wtpAdjustmentFactor = value;
+		return this;
+	}
+	@StringGetter( INPUT_DCFACTOR )
+	public double getWtpAdjustmentFactor() {
+		return this.wtpAdjustmentFactor;
 	}
 	@StringSetter(USER_DEFINED_NETWORK_ATTRIBUTE_MARGINAL_UTILITY)
 	public BicycleConfigGroup setMarginalUtilityOfUserDefinedNetworkAttribute_m(final double value) {

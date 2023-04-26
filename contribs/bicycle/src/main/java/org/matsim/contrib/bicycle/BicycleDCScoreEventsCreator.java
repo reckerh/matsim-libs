@@ -67,14 +67,14 @@ import java.util.*;
 
 		 BicycleConfigGroup bicycleConfigGroup = ConfigUtils.addOrGetModule( scenario.getConfig(), BicycleConfigGroup.class );
 
-		 //implement later: get wtps from config; for now, set WTPs by hand:
-		 this.wtpSideRoad_min = 0.0261;
-		 this.wtpBikeLane_min = 0.0804;
-		 this.wtpBikePath_min = 0.0882;
-		 this.wtpProtectedBikeLane_min = 0.1247;
-		 this.wtpCobbled_min = 0.0122;
-		 this.wtpAsphalt_min = 0.0454;
-		 this.bikeScoreAdjustmentFactor = 1.;
+		 //get WTPs
+		 this.wtpSideRoad_min = bicycleConfigGroup.getWtpSideRoad_min();
+		 this.wtpBikeLane_min = bicycleConfigGroup.getWtpBikeLane_min();
+		 this.wtpBikePath_min = bicycleConfigGroup.getWtpBikePath_min();
+		 this.wtpProtectedBikeLane_min = bicycleConfigGroup.getWtpProtectedBikeLane_min();
+		 this.wtpCobbled_min = bicycleConfigGroup.getWtpCobbled_min();
+		 this.wtpAsphalt_min = bicycleConfigGroup.getWtpAsphalt_min();
+		 this.bikeScoreAdjustmentFactor = bicycleConfigGroup.getWtpAdjustmentFactor();
 
 		 //deprecate support for user-defined network attributes? (currently uses the functionality of BicycleUtilityUtils that is also used in default scoring)
 		 this.marginalUtilityOfUserDefinedNetworkAttribute_m = bicycleConfigGroup.getMarginalUtilityOfUserDefinedNetworkAttribute_m();
@@ -102,14 +102,10 @@ import java.util.*;
 			 // can happen on first link.
 
 			 Link link = network.getLinks().get( event.getLinkId() );
-			 double amount = computeLinkBasedDCScore(link, lastLinkEnterTime.get(event.getVehicleId()), event.getTime(),
-					 wtpSideRoad_min, wtpBikeLane_min, wtpBikePath_min, wtpProtectedBikeLane_min,
-					 wtpCobbled_min, wtpAsphalt_min,
-					 marginalUtilityOfUserDefinedNetworkAttribute_m, nameOfUserDefinedNetworkAttribute,
-					 userDefinedNetworkAttributeDefaultValue);
+			 double amount = computeLinkBasedDCScore(link, lastLinkEnterTime.get(event.getVehicleId()), event.getTime());
 			 final Id<Person> driverOfVehicle = vehicle2driver.getDriverOfVehicle( event.getVehicleId() );
 			 Gbl.assertNotNull( driverOfVehicle );
-			 this.eventsManager.processEvent( new PersonScoreEvent( event.getTime(), driverOfVehicle, amount, "bicycleAdditionalLinkScore" ) );
+			 this.eventsManager.processEvent( new PersonScoreEvent( event.getTime(), driverOfVehicle, amount, "bicycleAdditionalDCLinkScore" ) );
 		 }
 	 }
 	 @Override public void handleEvent( VehicleLeavesTrafficEvent event ){
@@ -118,11 +114,7 @@ import java.util.*;
 		 if ( vehicle2driver.getDriverOfVehicle( event.getVehicleId() ) != null ){
 			 if( !Objects.equals( this.firstLinkIdMap.get( event.getVehicleId() ), event.getLinkId() ) ){ //if driver did not enter and leave on the same link
 				 Link link = network.getLinks().get( event.getLinkId() );
-				 double amount = computeLinkBasedDCScore(link, lastLinkEnterTime.get(event.getVehicleId()), event.getTime(),
-						 wtpSideRoad_min, wtpBikeLane_min, wtpBikePath_min, wtpProtectedBikeLane_min,
-						 wtpCobbled_min, wtpAsphalt_min,
-						 marginalUtilityOfUserDefinedNetworkAttribute_m, nameOfUserDefinedNetworkAttribute,
-						 userDefinedNetworkAttributeDefaultValue);
+				 double amount = computeLinkBasedDCScore(link, lastLinkEnterTime.get(event.getVehicleId()), event.getTime());
 				 final Id<Person> driverOfVehicle = vehicle2driver.getDriverOfVehicle( event.getVehicleId() );
 				 Gbl.assertNotNull( driverOfVehicle );
 				 this.eventsManager.processEvent( new PersonScoreEvent( event.getTime(), driverOfVehicle, amount, "bicycleAdditionalDCLinkScore" ) );
@@ -132,12 +124,7 @@ import java.util.*;
 
 
 
-	 public double computeLinkBasedDCScore( Link link, double lastLinkEnterTime, double eventTime,
-											double wtpSideRoad_min,
-											double wtpBikeLane_min, double wtpBikePath_min, double wtpProtectedBikeLane_min,
-											double wtpCobbled_min, double wtpAsphalt_min,
-											double marginalUtilityOfUserDefinedNetworkAttribute_m,
-											String nameOfUserDefinedNetworkAttribute, double userDefinedNetworkAttributeDefaultValue){
+	 public double computeLinkBasedDCScore( Link link, double lastLinkEnterTime, double eventTime){
 
 		 //get link attributes
 		 String surface = (String) link.getAttributes().getAttribute(BicycleUtils.SURFACE);
@@ -146,7 +133,8 @@ import java.util.*;
 		 //I don't think any of this is checked for presence of multiple attr (separated by ";") -> treated in WTP getters
 		 double distance = link.getLength();
 
-		 double traveledTime = (eventTime-lastLinkEnterTime)/60.; //TODO: look up unit of time (seconds, ...?) and adjust accordingly
+		 //calculation of traveled time on link in minutes as WTPs are per minute
+		 double traveledTime = (eventTime-lastLinkEnterTime)/60.; //TODO: look up unit of time (seconds, ...?) and adjust accordingly (so it is in minutes)
 
 		 //scoring of user-defined attributes
 		 String userDefinedNetworkAttributeString;
@@ -158,14 +146,13 @@ import java.util.*;
 		 }
 
 		 //Scoring of road type
-		 double roadTypeScore = -(wtpSideRoad_min - getRoadTypeWTP(type, wtpSideRoad_min)) * traveledTime;
+		 double roadTypeScore = -(wtpSideRoad_min - getRoadTypeWTP(type)) * traveledTime;
 
 		 //scoring of bike infrastructure
-		 double infrastructureScore = -(wtpProtectedBikeLane_min - getInfrastructureWTP(cyclewaytype, type, wtpBikeLane_min, wtpBikePath_min,
-				 wtpProtectedBikeLane_min))*traveledTime;
+		 double infrastructureScore = -(wtpProtectedBikeLane_min - getInfrastructureWTP(cyclewaytype, type))*traveledTime;
 
 		 //scoring of surface
-		 double surfaceScore = -(wtpAsphalt_min - getSurfaceWTP(surface, type, wtpCobbled_min, wtpAsphalt_min)) * traveledTime;
+		 double surfaceScore = -(wtpAsphalt_min - getSurfaceWTP(surface, type)) * traveledTime;
 
 		 //sum up and adjust the link-based score
 		 double amount = (userDefinedNetworkAttributeScore + roadTypeScore + infrastructureScore + surfaceScore)*
@@ -176,45 +163,28 @@ import java.util.*;
 
 
 
-	 public double getRoadTypeWTP(String type, double wtpSideRoad_min){
+	 public double getRoadTypeWTP(String type){
 		 //see possible values of link-attribute BicycleUtils.WAY_TYPE (f.e. in BicycleUtilityUtils.getInfrastructureFactor) and think of scoring implementation
 
-		 double roadTypeWTP = 0.;
-
 		 if(type != null){
-			 switch(type){
+			 return switch (type) {
 				 //for explanation of type (assumption: type = key:highway) values: https://wiki.openstreetmap.org/wiki/Key:highway
 				 //things such as steps could be explicitly punished based on the OSM data, but not based on the DC experiment
-				 case "motorway":
-				 case "trunk":
-				 case "primary":
-				 case "secondary":
-				 case "tertiary":
-				 case "motorway_link":
-				 case "trunk_link":
-				 case "primary_link":
-				 case "secondary_link":
-				 case "tertiary_link": roadTypeWTP = 0.; break; //higher-function road network -> main Road -> reference category
-				 case "minor":
-				 case "unclassified":
-				 case "residential":
-				 case "living_street":
-				 case "service":
-				 case "pedestrian":
-				 case "track":
-				 case "footway":
-				 case "path":
-				 case "cycleway": roadTypeWTP = wtpSideRoad_min; break; //lower-function network -> side road
-				 default: roadTypeWTP = 0.; break; //default is set to 0; may be justified due to possible not-bike-friendly untagged or left-out paths, but maybe too pessimistic
+				 case "motorway", "trunk", "primary", "secondary", "tertiary", "motorway_link", "trunk_link", "primary_link", "secondary_link", "tertiary_link" ->
+						 0.; //higher-function road network -> main Road -> reference category //-> TODO: Indentierung übernehmen oder automatisch von IntelliJ machen lassen
+				 case "minor", "unclassified", "residential", "living_street", "service", "pedestrian", "track", "footway", "path", "cycleway" ->
+						 wtpSideRoad_min; //lower-function network -> side road
+				 default ->
+						 0.; //default is set to 0; may be justified due to possible not-bike-friendly untagged or left-out paths, but maybe too pessimistic
 				 //TODO maybe change based on simulation results
-			 }
+			 } ;
+		 } else {
+			 return 0;
 		 }
-
-		 return roadTypeWTP;
 
 	 }
 
-	 public double getInfrastructureWTP(String cyclewaytype, String type, double wtpBikeLane_min, double wtpBikePath_min, double wtpProtectedBikeLane_min){
+	 public double getInfrastructureWTP(String cyclewaytype, String type){
 
 		 double infrastructureWTP = 0.;
 
@@ -227,84 +197,42 @@ import java.util.*;
 		 //shared busways (more common in DE) and shared car lanes (usually not explicitly marked in DE) not considered
 		 //options were adjusted based on infrastructure found present in Stuttgart
 		 if (cyclewaytype != null){
-			switch(cyclewaytype){
-				case "lane":
-				case "yes":
-				case "right":
-				case "opposite":
-				case "left":
-				case "lane;opposite_lane":
-				case "both":
-				case "opposite_lane": infrastructureWTP = wtpBikeLane_min; break;
-				case "track":
-				case "track;opposite_track":
-				case "track;opposite_lane":
-				case "cyclestreet":
-				case "opposite_track": infrastructureWTP = wtpProtectedBikeLane_min; break;
-				default: infrastructureWTP = 0.; break;
-			}
+			 infrastructureWTP = switch (cyclewaytype) {
+				 case "lane", "yes", "right", "opposite", "left", "lane;opposite_lane", "both", "opposite_lane" -> wtpBikeLane_min;
+				 case "track", "track;opposite_track", "track;opposite_lane", "cyclestreet", "opposite_track" -> wtpProtectedBikeLane_min;
+				 default -> 0.;
+			 };
 		 }
 
 		 //road types that provide similar conditions to bike guidance separated from traffic are given the highest wtp
 		 //assumption: type = key:highway
 		 if (type != null){
-			 switch(type){
-				 case "pedestrian":
-				 case "footway":
-				 case "path":
-				 case "cycleway": infrastructureWTP = wtpProtectedBikeLane_min; break; //lower-function network -> side road
-				 default: infrastructureWTP = 0.; break;
-			 }
+			 infrastructureWTP = switch (type) {
+				 case "pedestrian", "footway", "path", "cycleway" -> wtpProtectedBikeLane_min; //lower-function network -> side road
+				 default -> 0.;
+			 };
 		 }
 
 		 return infrastructureWTP;
 
 	 }
 
-	 public double getSurfaceWTP(String surface, String type, double wtpCobbled_min, double wtpAsphalt_min){
+	 public double getSurfaceWTP(String surface, String type){
 
 		 double surfaceWTP = 0.;
 
 		 if (surface != null) {
-			 switch (surface) {
+			 surfaceWTP = switch (surface) {
 				 //for explanations of surface values see https://wiki.openstreetmap.org/wiki/Key:surface
-				 case "excellent":
-				 case "paved":
-				 case "asphalt;paved":
-				 case "asphalt": surfaceWTP = wtpAsphalt_min; break; //asphalt & paved both are assigned the asphalt WTP; paved assumed to be very even surface
-				 case "cobblestone": surfaceWTP = wtpCobbled_min; break;
-				 case "cobblestone (bad)": surfaceWTP = wtpCobbled_min; break;
-				 case "sett": surfaceWTP = wtpCobbled_min; break;
-				 case "grass_paver":
-				 case "cobblestone;flattened":
-				 case "cobblestone:flattened": surfaceWTP = wtpCobbled_min; break;
-				 case "concrete": surfaceWTP = wtpAsphalt_min; break;
-				 case "concrete:lanes": surfaceWTP = wtpAsphalt_min; break;
-				 case "concrete_plates":
-				 case "concrete:plates": surfaceWTP = wtpAsphalt_min; break;
-				 case "paving_stones": surfaceWTP = wtpAsphalt_min; break; //relatively even -> asphalt WTP
-				 case "paving_stones:35":
-				 case "paving_stones:30": surfaceWTP = wtpAsphalt_min; break;
-				 case "unpaved": surfaceWTP = 0.; break; //unpaved and subvalues are assigned WTP 0 (-> reference class)
-				 case "compacted": surfaceWTP = 0.; break; //TODO: hier ggf. asphalt zuweisen, da eig. sehr gut befahrbar?
-				 case "unhewn_cobblestone":
-				 case "artificial_turf":
-				 case "dirt":
-				 case "earth": surfaceWTP = 0.; break;
-				 case "fine_gravel": surfaceWTP = 0.; break; //TODO: hier ggf. asphalt zuweisen, da eig. sehr gut befahrbar?
-				 case "gravel":
-				 case "ground": surfaceWTP = 0.; break;
-				 case "wood": //TODO: hier ggf. asphalt zuweisen, da eig. sehr gut befahrbar?
-				 case "pebblestone":
-				 case "sand": surfaceWTP = 0.; break;
-				 case "bricks": surfaceWTP = wtpCobbled_min; break;
-				 case "stone":
-				 case "grass":
-				 case "compressed": surfaceWTP = 0.; break; //TODO: compressed ggf. besser bewertet als stone und grass?
-				 case "asphalt;paving_stones:35": surfaceWTP = wtpAsphalt_min; break;
-				 case "paving_stones:3": surfaceWTP = wtpAsphalt_min; break;
-				 default: surfaceWTP = 0.; break;
-			 }
+				 case "excellent", "paved", "asphalt;paved", "asphalt", "concrete", "concrete:lanes", "concrete_plates",
+						 "concrete:plates", "paving_stones", "paving_stones:3", "paving_stones:35", "paving_stones:30",
+						 "asphalt;paving_stones:35" -> wtpAsphalt_min; //asphalt & paved both are assigned the asphalt WTP; paved assumed to be very even surface
+				 case "cobblestone", "cobblestone (bad)", "sett", "grass_paver", "cobblestone;flattened", "cobblestone:flattened",
+						 "bricks" -> wtpCobbled_min;
+				 case "unpaved", "compacted", "unhewn_cobblestone", "artificial_turf", "dirt", "earth", "gravel", "ground",
+						 "fine_gravel", "wood", "pebblestone", "sand", "stone", "grass", "compressed" -> 0.; //unpaved and subvalues are assigned WTP 0 (-> reference class)
+				 default -> 0.;
+			 };
 		 } else {
 			 // For many primary and secondary roads, no surface is specified because they are by default assumed to be is asphalt.
 			 // For tertiary roads street this is not true, e.g. Friesenstr. in Kreuzberg
