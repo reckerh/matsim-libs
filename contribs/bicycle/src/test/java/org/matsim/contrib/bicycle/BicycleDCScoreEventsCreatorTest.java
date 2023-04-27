@@ -45,9 +45,9 @@ public class BicycleDCScoreEventsCreatorTest {
 		var scenario = ScenarioUtils.createScenario(config);
 
 		// create network
-		var node1 = scenario.getNetwork().getFactory().createNode(Id.createNodeId("node1"), new Coord(0,0));
+		var node1 = scenario.getNetwork().getFactory().createNode(Id.createNodeId("node1"), new Coord(0, 0));
 		var node2 = scenario.getNetwork().getFactory().createNode(Id.createNodeId("node2"), new Coord(0, 100));
-		link1 = scenario.getNetwork().getFactory().createLink(Id.createLinkId("link1"),node1, node2);
+		link1 = scenario.getNetwork().getFactory().createLink(Id.createLinkId("link1"), node1, node2);
 		scenario.getNetwork().addNode(node1);
 		scenario.getNetwork().addNode(node2);
 		scenario.getNetwork().addLink(link1);
@@ -62,7 +62,6 @@ public class BicycleDCScoreEventsCreatorTest {
 		veh1 = scenario.getVehicles().getVehicles().get(Id.createVehicleId("person1"));
 
 
-
 		// prepare events manager
 		var handler = new Handler();
 		var manager = EventsUtils.createEventsManager();
@@ -75,37 +74,37 @@ public class BicycleDCScoreEventsCreatorTest {
 		var link1Attributes = link1.getAttributes();
 
 		//case: type NULL, surface NULL, cycleway type NULL
-		expScoreSum += createTestEvents(0., 0., 60., 60., (-1. + -2. + -3.)/10.);
+		expScoreSum += createTestEvents(0., 0., 60., 60., (-1. + -2. + -3.) / 10.);
 
 		//case: type unknown, surface unknown, cycleway type unknown
 		link1Attributes.putAttribute(BicycleUtils.WAY_TYPE, "nonsense");
 		link1Attributes.putAttribute(BicycleUtils.SURFACE, "nonsense");
 		link1Attributes.putAttribute(BicycleUtils.CYCLEWAY, "nonsense");
-		expScoreSum += createTestEvents(0., 0., 60., 60., (-1. + -2. + -3.)/10.);
+		expScoreSum += createTestEvents(0., 0., 60., 60., (-1. + -2. + -3.) / 10.);
 
 		//case: type primary, surface NULL (-> assumed good due to primary), cycleway type unknown
 		link1Attributes.putAttribute(BicycleUtils.WAY_TYPE, "primary");
 		link1Attributes.removeAttribute(BicycleUtils.SURFACE);
-		expScoreSum += createTestEvents(0.,0.,60.,60., (-1. + -0. + -3.)/10. );
+		expScoreSum += createTestEvents(0., 0., 60., 60., (-1. + -0. + -3.) / 10.);
 
 		//case: type motorway, excellent surface, unkown cycleway type
 		link1Attributes.putAttribute(BicycleUtils.WAY_TYPE, "motorway");
 		link1Attributes.putAttribute(BicycleUtils.SURFACE, "excellent");
 		link1Attributes.putAttribute(BicycleUtils.CYCLEWAY, "nonsense");
-		expScoreSum += createTestEvents(0., 0., 60., 60., (-1. + -0. + -3.)/10.);
+		expScoreSum += createTestEvents(0., 0., 60., 60., (-1. + -0. + -3.) / 10.);
 
 		//case: type path, surface cobbled, unknown cycleway type
 		link1Attributes.putAttribute(BicycleUtils.WAY_TYPE, "path");
 		link1Attributes.putAttribute(BicycleUtils.SURFACE, "cobblestone");
 		link1Attributes.putAttribute(BicycleUtils.CYCLEWAY, "nonsense");
-		expScoreSum += createTestEvents(0., 0., 60., 60., (0. + -1. + -0.)/10.);
+		expScoreSum += createTestEvents(0., 0., 60., 60., (0. + -1. + -0.) / 10.);
 
 
 		// after all event handlers are called check the score
 		assertEquals(expScoreSum, handler.accumulatedScore, 0.0001);
 	}
 
-	public double createTestEvents(double tet, double let, double llt, double tlt, double expScore){
+	public double createTestEvents(double tet, double let, double llt, double tlt, double expScore) {
 
 		//This class is not exactly "realistic" as it does both a enterTraffic/linkEnter and linkLeave/leaveTraffic
 		//event for the same link (should normally not be the case)
