@@ -136,11 +136,12 @@ class BicycleDCScoreEventsCreator
 		String surface = (String) link.getAttributes().getAttribute(BicycleUtils.SURFACE);
 		String type = (String) link.getAttributes().getAttribute(BicycleUtils.WAY_TYPE);
 		String cyclewaytype = (String) link.getAttributes().getAttribute(BicycleUtils.CYCLEWAY);
+		String lcn = (String) link.getAttributes().getAttribute("lcn");
 		//I don't think any of this is checked for presence of multiple attr (separated by ";") -> treated in WTP getters
 		double distance = link.getLength();
 
 		//calculation of traveled time on link in minutes as WTPs are per minute
-		double traveledTime = (eventTime - lastLinkEnterTime) / 60.; //TODO: look up unit of time (seconds, ...?) and adjust accordingly (so it is in minutes)
+		double traveledTime = (eventTime - lastLinkEnterTime) / 60.; //basic unit of time in MATSim are seconds
 
 		//scoring of user-defined attributes
 		String userDefinedNetworkAttributeString;
@@ -155,7 +156,7 @@ class BicycleDCScoreEventsCreator
 		double roadTypeScore = -(wtpSideRoad_min - getRoadTypeWTP(type)) * traveledTime;
 
 		//scoring of bike infrastructure
-		double infrastructureScore = -(wtpProtectedBikeLane_min - getInfrastructureWTP(cyclewaytype, type)) * traveledTime;
+		double infrastructureScore = -(wtpProtectedBikeLane_min - getInfrastructureWTP(lcn, cyclewaytype, type)) * traveledTime;
 
 		//scoring of surface
 		double surfaceScore = -(wtpAsphalt_min - getSurfaceWTP(surface, type)) * traveledTime;
@@ -188,10 +189,16 @@ class BicycleDCScoreEventsCreator
 
 	}
 
-	public double getInfrastructureWTP(String cyclewaytype, String type) {
+	public double getInfrastructureWTP(String lcn, String cyclewaytype, String type) {
 
 		double infrastructureWTP = 0.;
 
+
+		if (lcn != null){
+			if (lcn.equals("yes")){
+				infrastructureWTP = wtpBikeLane_min;
+			}
+		}
 
 		//assumption: cyclewaytype = key:cycleway; sadly, this does not cover all types of cycleways in OSM
 		//for (some) options in OSM see https://wiki.openstreetmap.org/wiki/Key:cycleway
@@ -201,9 +208,13 @@ class BicycleDCScoreEventsCreator
 		//options were adjusted based on infrastructure found present in Stuttgart
 		if (cyclewaytype != null) {
 			infrastructureWTP = switch (cyclewaytype) {
-				case "lane", "yes", "right", "opposite", "left", "lane;opposite_lane", "both", "opposite_lane" -> wtpBikeLane_min;
-				case "track", "track;opposite_track", "track;opposite_lane", "cyclestreet", "opposite_track" -> wtpProtectedBikeLane_min;
-				default -> 0.;
+				case "lane", "yes", "right", "opposite", "left", "lane;opposite_lane", "both", "cyclestreet",
+						"opposite_lane" ->
+						wtpBikeLane_min;
+				case "track", "track;opposite_track", "track;opposite_lane", "opposite_track" ->
+						wtpProtectedBikeLane_min;
+				default ->
+						infrastructureWTP;
 			};
 		}
 
@@ -211,8 +222,13 @@ class BicycleDCScoreEventsCreator
 		//assumption: type = key:highway
 		if (type != null) {
 			infrastructureWTP = switch (type) {
-				case "pedestrian", "footway", "path", "cycleway" -> wtpProtectedBikeLane_min; //lower-function network -> side road
-				default -> 0.;
+				//differentiate between more or less pedestrian interaction?
+				case "path", "cycleway", "track" ->
+						wtpProtectedBikeLane_min; //lower-function network without explicit pedestrian use -> pbl wtp
+				case "pedestrian", "footway" ->
+					wtpBikePath_min; //lower-function network with pedestrian interaction -> bikepath wtp
+				default ->
+						infrastructureWTP;
 			};
 		}
 
@@ -232,7 +248,8 @@ class BicycleDCScoreEventsCreator
 						"asphalt;paving_stones:35" ->
 						wtpAsphalt_min; //asphalt & paved both are assigned the asphalt WTP; paved assumed to be very even surface
 				case "cobblestone", "cobblestone (bad)", "sett", "grass_paver", "cobblestone;flattened", "cobblestone:flattened",
-						"bricks" -> wtpCobbled_min;
+						"bricks" ->
+						wtpCobbled_min;
 				case "unpaved", "compacted", "unhewn_cobblestone", "artificial_turf", "dirt", "earth", "gravel", "ground",
 						"fine_gravel", "wood", "pebblestone", "sand", "stone", "grass", "compressed" ->
 						0.; //unpaved and subvalues are assigned WTP 0 (-> reference class)

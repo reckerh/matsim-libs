@@ -41,6 +41,9 @@ public class BicycleDCScoreEventsCreatorTest {
 		bikeConfig.setWtpProtectedBikeLane_min(3.);
 		bikeConfig.setWtpCobbled_min(1.);
 		bikeConfig.setWtpAsphalt_min(2.);
+		bikeConfig.setMarginalUtilityOfUserDefinedNetworkAttribute_m(-0.01);
+		bikeConfig.setUserDefinedNetworkAttributeName("myComfortAttr");
+		bikeConfig.setUserDefinedNetworkAttributeDefaultValue(1.);
 		var config = ConfigUtils.createConfig(bikeConfig);
 		var scenario = ScenarioUtils.createScenario(config);
 
@@ -51,7 +54,6 @@ public class BicycleDCScoreEventsCreatorTest {
 		scenario.getNetwork().addNode(node1);
 		scenario.getNetwork().addNode(node2);
 		scenario.getNetwork().addLink(link1);
-		//problem: links and nodes have to be added to network by hand -> are there tricks to prevent that?
 
 		//create population
 		scenario.getPopulation().addPerson(PopulationUtils.getFactory().createPerson(Id.createPersonId("person1")));
@@ -93,14 +95,47 @@ public class BicycleDCScoreEventsCreatorTest {
 		link1Attributes.putAttribute(BicycleUtils.CYCLEWAY, "nonsense");
 		expScoreSum += createTestEvents(0., 0., 60., 60., (-1. + -0. + -3.) / 10.);
 
-		//case: type path, surface cobbled, unknown cycleway type
+		//case: type path, surface cobbled, unknown cycleway type (implicit: pbl, due to type path)
 		link1Attributes.putAttribute(BicycleUtils.WAY_TYPE, "path");
 		link1Attributes.putAttribute(BicycleUtils.SURFACE, "cobblestone");
 		link1Attributes.putAttribute(BicycleUtils.CYCLEWAY, "nonsense");
 		expScoreSum += createTestEvents(0., 0., 60., 60., (0. + -1. + -0.) / 10.);
 
+		//case: type footway, surface cobbled, cycleway type track (implicit: bike path, due to type footway)
+		link1Attributes.putAttribute(BicycleUtils.WAY_TYPE, "footway");
+		link1Attributes.putAttribute(BicycleUtils.SURFACE, "cobblestone");
+		link1Attributes.putAttribute(BicycleUtils.CYCLEWAY, "track");
+		expScoreSum += createTestEvents(0., 0., 60., 60., (0. + -1. + -1.) / 10.);
+
+		//case: type residential, surface cobbled, cycleway type track
+		link1Attributes.putAttribute(BicycleUtils.WAY_TYPE, "residential");
+		link1Attributes.putAttribute(BicycleUtils.SURFACE, "cobblestone");
+		link1Attributes.putAttribute(BicycleUtils.CYCLEWAY, "track");
+		expScoreSum += createTestEvents(0., 0., 60., 60., (0. + -1. + 0.) / 10.);
+
+		//case: type residential, surface cobbled, cycleway type lane
+		link1Attributes.putAttribute(BicycleUtils.WAY_TYPE, "residential");
+		link1Attributes.putAttribute(BicycleUtils.SURFACE, "cobblestone");
+		link1Attributes.putAttribute(BicycleUtils.CYCLEWAY, "lane");
+		expScoreSum += createTestEvents(0., 0., 60., 60., (0. + -1. + -2.) / 10.);
+
+		//case: type residential, surface cobbled, cycleway type unknown but assumed lane due to lcn
+		link1Attributes.putAttribute(BicycleUtils.WAY_TYPE, "residential");
+		link1Attributes.putAttribute(BicycleUtils.SURFACE, "cobblestone");
+		link1Attributes.putAttribute(BicycleUtils.CYCLEWAY, "nonsense");
+		link1Attributes.putAttribute("lcn", "yes");
+		expScoreSum += createTestEvents(0., 0., 60., 60., (0. + -1. + -2.) / 10.);
+
+		//case: type residential, surface cobbled, cycleway type unknown but assumed lane due to lcn, userdefinedattr gives -1
+		link1Attributes.putAttribute(BicycleUtils.WAY_TYPE, "residential");
+		link1Attributes.putAttribute(BicycleUtils.SURFACE, "cobblestone");
+		link1Attributes.putAttribute(BicycleUtils.CYCLEWAY, "nonsense");
+		link1Attributes.putAttribute("lcn", "yes");
+		link1Attributes.putAttribute("myComfortAttr", "0");
+		expScoreSum += createTestEvents(0., 0., 60., 60., (0. + -1. + -2. + -1.) / 10.);
 
 		// after all event handlers are called check the score
+		System.out.println("expected Score sum: " + expScoreSum);
 		assertEquals(expScoreSum, handler.accumulatedScore, 0.0001);
 	}
 
