@@ -220,6 +220,8 @@ class BicycleDCScoreEventsCreator
 
 		//road types that provide similar conditions to bike guidance separated from traffic are given the highest wtp
 		//assumption: type = key:highway
+		//Attention: This asssumes that all path,track,pedestrian,footway links with no bike allowance have been removed in
+		//network builder
 		if (type != null) {
 			infrastructureWTP = switch (type) {
 				//differentiate between more or less pedestrian interaction?
@@ -257,10 +259,11 @@ class BicycleDCScoreEventsCreator
 			};
 		} else {
 			// For many primary and secondary roads, no surface is specified because they are by default assumed to be is asphalt.
-			// For tertiary roads street this is not true, e.g. Friesenstr. in Kreuzberg
+			// based on the network statistics, I will assume similar surface compositions for tertiary and residential roads
+			//-> roads without surface info that are unclassified, living_street, path, track, ... will be assigned the worst surface category
 			if (type != null) {
 				if (type.equals("primary") || type.equals("primary_link") || type.equals("secondary") || type.equals("secondary_link") ||
-						type.equals("tertiary") || type.equals("tertiary_link") || type.equals("residential")
+						type.equals("tertiary") || type.equals("tertiary_link") || type.equals("residential") || type.equals("cycleway")
 				) {
 					surfaceWTP = wtpAsphalt_min;
 				}
