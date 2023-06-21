@@ -141,7 +141,7 @@ class BicycleDCScoreEventsCreator
 		double distance = link.getLength();
 
 		//calculation of traveled time on link in minutes as WTPs are per minute
-		double traveledTime = (eventTime - lastLinkEnterTime) / 60.; //basic unit of time in MATSim are seconds
+		double traveledTime = (eventTime - lastLinkEnterTime) / 60.; //basic unit of time in MATSim are seconds, this methods' WTP parameters use minutes
 
 		//scoring of user-defined attributes
 		String userDefinedNetworkAttributeString;
@@ -194,8 +194,8 @@ class BicycleDCScoreEventsCreator
 		double infrastructureWTP = 0.;
 
 
-		if (lcn != null){
-			if (lcn.equals("yes")){
+		if (lcn != null) {
+			if (lcn.equals("yes")) {
 				infrastructureWTP = wtpBikeLane_min;
 			}
 		}
@@ -209,12 +209,9 @@ class BicycleDCScoreEventsCreator
 		if (cyclewaytype != null) {
 			infrastructureWTP = switch (cyclewaytype) {
 				case "lane", "yes", "right", "opposite", "left", "lane;opposite_lane", "both", "cyclestreet",
-						"opposite_lane" ->
-						wtpBikeLane_min;
-				case "track", "track;opposite_track", "track;opposite_lane", "opposite_track" ->
-						wtpProtectedBikeLane_min;
-				default ->
-						infrastructureWTP;
+						"opposite_lane" -> wtpBikeLane_min;
+				case "track", "track;opposite_track", "track;opposite_lane", "opposite_track" -> wtpProtectedBikeLane_min;
+				default -> infrastructureWTP;
 			};
 		}
 
@@ -225,12 +222,9 @@ class BicycleDCScoreEventsCreator
 		if (type != null) {
 			infrastructureWTP = switch (type) {
 				//differentiate between more or less pedestrian interaction?
-				case "path", "cycleway", "track" ->
-						wtpProtectedBikeLane_min; //lower-function network without explicit pedestrian use -> pbl wtp
-				case "pedestrian", "footway" ->
-					wtpBikePath_min; //lower-function network with pedestrian interaction -> bikepath wtp
-				default ->
-						infrastructureWTP;
+				case "path", "cycleway", "track" -> wtpProtectedBikeLane_min; //lower-function network without explicit pedestrian use -> pbl wtp
+				case "pedestrian", "footway" -> wtpBikePath_min; //lower-function network with pedestrian interaction -> bikepath wtp
+				default -> infrastructureWTP;
 			};
 		}
 
@@ -250,8 +244,7 @@ class BicycleDCScoreEventsCreator
 						"asphalt;paving_stones:35" ->
 						wtpAsphalt_min; //asphalt & paved both are assigned the asphalt WTP; paved assumed to be very even surface
 				case "cobblestone", "cobblestone (bad)", "sett", "grass_paver", "cobblestone;flattened", "cobblestone:flattened",
-						"bricks" ->
-						wtpCobbled_min;
+						"bricks" -> wtpCobbled_min;
 				case "unpaved", "compacted", "unhewn_cobblestone", "artificial_turf", "dirt", "earth", "gravel", "ground",
 						"fine_gravel", "wood", "pebblestone", "sand", "stone", "grass", "compressed" ->
 						0.; //unpaved and subvalues are assigned WTP 0 (-> reference class)
