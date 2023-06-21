@@ -8,14 +8,13 @@ import org.matsim.api.core.v01.population.Person;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup;
 import org.matsim.core.config.groups.PlansCalcRouteConfigGroup;
-import org.matsim.core.events.handler.EventHandler;
 import org.matsim.core.gbl.MatsimRandom;
-import org.matsim.core.network.NetworkUtils;
 import org.matsim.core.router.util.TravelDisutility;
 import org.matsim.core.router.util.TravelTime;
 import org.matsim.vehicles.Vehicle;
+
 import java.util.Random;
-import com.google.inject.Inject;
+
 
 /**
  * @author reckerh
@@ -53,11 +52,11 @@ public class BicycleDCTravelDisutility implements TravelDisutility {
 							  TravelTime timeCalculator, double normalization, Scenario scenario, EventsManager eventsManager) {
 
 		final PlanCalcScoreConfigGroup.ModeParams bicycleParams = cnScoringGroup.getModes().get(bicycleConfigGroup.getBicycleMode());
-		if (bicycleParams == null){
+		if (bicycleParams == null) {
 			throw new NullPointerException("Mode " + bicycleConfigGroup.getBicycleMode() + "is not part of the valid mode parameters " + cnScoringGroup.getModes().keySet());
 		}
 
-		this.marginalCostOfDistance_m = - (bicycleParams.getMonetaryDistanceRate() * cnScoringGroup.getMarginalUtilityOfMoney())
+		this.marginalCostOfDistance_m = -(bicycleParams.getMonetaryDistanceRate() * cnScoringGroup.getMarginalUtilityOfMoney())
 				- bicycleParams.getMarginalUtilityOfDistance();
 		this.marginalCostOfTime_s = -(bicycleParams.getMarginalUtilityOfTraveling() / 3600.0) + cnScoringGroup.getPerforming_utils_hr() / 3600.0;
 
@@ -71,7 +70,7 @@ public class BicycleDCTravelDisutility implements TravelDisutility {
 	}
 
 	@Override
-	public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle){
+	public double getLinkTravelDisutility(Link link, double time, Person person, Vehicle vehicle) {
 
 		//BicycleDCScoreEventsCreator scoreCreator = new BicycleDCScoreEventsCreator(scenario, eventsManager);
 		//I do not not if injection will work if I do this in the init and use an instance-wide variable
@@ -88,7 +87,7 @@ public class BicycleDCTravelDisutility implements TravelDisutility {
 
 
 		// randomize if applicable
-		if ( sigma != 0.) {
+		if (sigma != 0.) {
 
 			if (person == null) {
 				throw new RuntimeException("you cannot use the randomizing travel disutility without person. If you need this without a person, set sigma to zero.");
@@ -118,14 +117,9 @@ public class BicycleDCTravelDisutility implements TravelDisutility {
 	}
 
 	@Override
-	public double getLinkMinimumTravelDisutility(Link link){
+	public double getLinkMinimumTravelDisutility(Link link) {
 		return 0;
 	}
-
-
-
-
-
 
 
 }

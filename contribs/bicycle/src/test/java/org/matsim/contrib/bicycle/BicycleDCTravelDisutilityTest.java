@@ -2,11 +2,8 @@ package org.matsim.contrib.bicycle;
 
 import com.google.inject.Binder;
 import com.google.inject.Guice;
-import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.google.inject.util.Providers;
-import org.junit.Before;
 import org.junit.Test;
 import org.matsim.api.core.v01.Coord;
 import org.matsim.api.core.v01.Id;
@@ -15,7 +12,6 @@ import org.matsim.api.core.v01.events.Event;
 import org.matsim.api.core.v01.events.PersonScoreEvent;
 import org.matsim.api.core.v01.network.Link;
 import org.matsim.api.core.v01.population.Person;
-import org.matsim.api.core.v01.population.Plan;
 import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.Config;
 import org.matsim.core.config.ConfigUtils;
@@ -50,7 +46,7 @@ public class BicycleDCTravelDisutilityTest {
 	private BicycleDCTravelDisutility testClass;
 
 	@Test
-	public void dummyTest(){
+	public void dummyTest() {
 
 		//prepare dummy classes
 		timeCalculator = new TestTravelTime();
@@ -117,11 +113,11 @@ public class BicycleDCTravelDisutilityTest {
 		//try{setUp();}catch (java.lang.Exception exception){};
 		double res = testClass.getLinkTravelDisutility(link1, time, person1, veh1);
 		double expRes = (
-				2 * time * (-(bicycleParams.getMarginalUtilityOfTraveling()/3600.) + cnScoringGroup.getPerforming_utils_hr() / 3600.) +
-						link1.getLength() * (-(bicycleParams.getMonetaryDistanceRate() * cnScoringGroup.getMarginalUtilityOfMoney())-
+				2 * time * (-(bicycleParams.getMarginalUtilityOfTraveling() / 3600.) + cnScoringGroup.getPerforming_utils_hr() / 3600.) +
+						link1.getLength() * (-(bicycleParams.getMonetaryDistanceRate() * cnScoringGroup.getMarginalUtilityOfMoney()) -
 								bicycleParams.getMarginalUtilityOfDistance()) +
 						(-((-1. + -2. + -3.) / 10.))
-				);
+		);
 		assertEquals(res, expRes, 0.0001);
 
 
@@ -130,14 +126,14 @@ public class BicycleDCTravelDisutilityTest {
 	//prepare Guice
 	//@Before does not work here as testClass is still null before -> I call setup manually, I do not know if using the injections in the constructor
 	//will work in practice anyways
-	public void setUp() throws Exception{
+	public void setUp() throws Exception {
 		Injector injector = Guice.createInjector(new Module() {
 			@Override
 			public void configure(Binder binder) {
 				binder.bind(Scenario.class).toInstance(scenario);
 				binder.bind(EventsManager.class).toInstance(manager);
 			}
-		} );
+		});
 		injector.injectMembers(testClass);
 	}
 
