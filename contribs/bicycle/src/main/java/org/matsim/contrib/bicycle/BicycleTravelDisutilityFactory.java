@@ -21,6 +21,8 @@ package org.matsim.contrib.bicycle;
 import com.google.inject.Inject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.matsim.api.core.v01.Scenario;
+import org.matsim.core.api.experimental.events.EventsManager;
 import org.matsim.core.config.groups.PlanCalcScoreConfigGroup;
 import org.matsim.core.config.groups.PlansCalcRouteConfigGroup;
 import org.matsim.core.router.costcalculators.TravelDisutilityFactory;
@@ -41,15 +43,18 @@ public final class BicycleTravelDisutilityFactory implements TravelDisutilityFac
 	@Inject	BicycleConfigGroup bicycleConfigGroup;
 	@Inject	PlanCalcScoreConfigGroup cnScoringGroup;
 	@Inject	PlansCalcRouteConfigGroup plansCalcRouteConfigGroup;
-	
+	@Inject Scenario scenario;
+	@Inject	EventsManager eventsManager;
+
+
 	private static int normalisationWrnCnt = 0;
 
 	/* package-private */ BicycleTravelDisutilityFactory(){}
-	
+
 	@Override
 	public TravelDisutility createTravelDisutility(TravelTime timeCalculator) {
 		double sigma = plansCalcRouteConfigGroup.getRoutingRandomness();
-		
+
 		double normalization = 1;
 		if ( sigma != 0. ) {
 			normalization = 1. / Math.exp(sigma * sigma / 2);
@@ -58,6 +63,11 @@ public final class BicycleTravelDisutilityFactory implements TravelDisutilityFac
 				LOG.info(" sigma: " + sigma + "; resulting normalization: " + normalization);
 			}
 		}
-		return new BicycleTravelDisutility(bicycleConfigGroup, cnScoringGroup, plansCalcRouteConfigGroup, timeCalculator, normalization);
+
+		if ( bicycleConfigGroup.getWtpAdjustmentFactor()!=0 ) {
+			return new BicycleDCTravelDisutility(bicycleConfigGroup, cnScoringGroup, plansCalcRouteConfigGroup, timeCalculator, normalization, scenario, eventsManager);
+		} else {
+			return new BicycleTravelDisutility(bicycleConfigGroup, cnScoringGroup, plansCalcRouteConfigGroup, timeCalculator, normalization);
+		}
 	}
 }
