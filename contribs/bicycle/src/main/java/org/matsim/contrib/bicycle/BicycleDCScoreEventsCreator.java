@@ -21,6 +21,11 @@ import org.matsim.vehicles.Vehicle;
 
 import java.util.*;
 
+/**
+ * @author reckerh
+ * some parts were written in similar fashion as BicycleScoreEventsCreator and BicycleUtilityUtils but edited to implement a scoring approach based on logit model results
+ */
+
 class BicycleDCScoreEventsCreator
 		implements VehicleEntersTrafficEventHandler, LinkEnterEventHandler, LinkLeaveEventHandler, VehicleLeavesTrafficEventHandler {
 
